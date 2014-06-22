@@ -3,7 +3,7 @@ import '../lib/src/core/core.dart';
 import "dart:io";
 
 _print_help() {
-  printToConsole("Incorrect usage!\ndartboard {config_path}");
+  print("Incorrect usage!\ndartboard {config_path}\n");
   exit(0);
 }
 
@@ -15,6 +15,6 @@ main(List<String> args) {
   if(args.length == 1)
     path = args[0];
 
-  Core network = new Core(path);
-  network.serve();
+  Core core = new Core(path);
+  core.serve();
 }

@@ -31,6 +31,7 @@ class Core {
 
   _invalid_password(Socket socket, String user) {
     socket.writeln(_bnc_name + ": You supplied an incorrect password for the user " + user + "! Connection refused!");
+    print("Client at address " + socket.remoteAddress.address + " was rejected, due to an invalid username or password.");
     socket.close();
   }
 
@@ -53,7 +54,9 @@ class Core {
 
   serve() {
     ServerSocket.bind(new InternetAddress("127.0.0.1"), _server_port).then((ServerSocket socket) {
+      print("Successfully started server on port " + _server_port.toString());
       socket.listen((Socket client) {
+        print("Client at address " + client.remoteAddress.address + " is attempting to connect.");
         client.listen((List<int> data) {
           String message = String.fromCharCode(data);
           message = message.trim();

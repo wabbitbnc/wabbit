@@ -1,4 +1,4 @@
-import "../lib/src/core/network.dart";
+import '../lib/src/core/core.dart';
 
 import "dart:io";
 
@@ -15,6 +15,6 @@ main(List<String> args) {
   if(args.length == 1)
     path = args[0];
 
-  Network network = new Network(path);
+  Core network = new Core(path);
   network.serve();
 }

@@ -6,7 +6,7 @@ import "../../dartboard.dart";
 
 import "package:ini/ini.dart";
 
-class Network {
+class Core {
 
   final String _bnc_name = "dartboard";
 
@@ -14,8 +14,12 @@ class Network {
 
   Map<String, User> _users = new HashMap<String, User>();
 
-  Network(String configLocation) {
-    Config conf = Config.readFileSync(new File(configLocation));
+  Core(String configLocation) {
+    File file = new File(configLocation);
+    if(!file.existsSync())
+      file.createSync();
+
+    Config conf = Config.readFileSync(file);
     if(conf.get("server", "port") != null) _server_port = int.parse(conf.get("serve", "port"));
 
     for(String section in conf.sections()) {

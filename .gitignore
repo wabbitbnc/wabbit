@@ -2,6 +2,10 @@
 build/
 packages/
 
+.project/
+.settings/
+dartboard.yaml
+
 # Or the files created by dart2js.
 *.dart.js
 *.dart.precompiled.js

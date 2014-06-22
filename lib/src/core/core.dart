@@ -1,73 +1,45 @@
-import "dart:io";
+library dartboard._core;
+
 import "dart:async";
-import "dart:collection";
+import "dart:io";
 
-import "../../dartboard.dart";
+import "package:dartboard/dartboard.dart";
+import "package:yaml/yaml.dart";
 
-import "package:ini/ini.dart";
+import "./bnc_server.dart";
+import "./irc_client.dart";
 
 class Core {
-
-  final String _bnc_name = "dartboard";
-
-  int _server_port = 6667;
-
-  Map<String, User> _users = new HashMap<String, User>();
 
   Core(String configLocation) {
     File file = new File(configLocation);
     if(!file.existsSync())
       file.createSync();
 
-    Config conf = Config.readFileSync(file);
-    if(conf.get("server", "port") != null) _server_port = int.parse(conf.get("serve", "port"));
+    var conf = loadYaml(file.readAsStringSync());
 
-    for(String section in conf.sections()) {
-      if(section.startsWith("user-")) {
-        _users[section.substring(5)] = new User(new Server(conf.get(section + "-server", "address"), int.parse(conf.get(section + "-server", "port")), conf.get(section + "-server", "nickname"), conf.get(section + "-server", "realname")), conf.get(section, "password"));
+    if(conf["server"] != null && conf["server"]["port"] != null) Settings.server_port = conf["server"]["port"];
+
+    if(conf["users"] != null) {
+      Map users = conf["users"];
+      for(String section in users.keys) {
+        Settings.users[section] = new User(new Server(conf["users"][section]["server"]["address"],
+                                                        conf["users"][section]["server"]["port"],
+                                                        conf["users"][section]["server"]["nickname"],
+                                                        conf["users"][section]["server"]["realname"],
+                                                        conf["users"][section]["server"]["username"]),
+                                                        conf["users"][section]["password"]);
       }
     }
-  }
-
-  _invalid_password(Socket socket, String user) {
-    socket.writeln(_bnc_name + ": You supplied an incorrect password for the user " + user + "! Connection refused!");
-    print("Client at address " + socket.remoteAddress.address + " was rejected, due to an invalid username or password.");
-    socket.close();
-  }
-
-  _handle_connection(Socket socket, User user) {
-    // TODO tomorrow.
-  }
-
-  _handle_pass(Socket socket, String pass) {
-    String user = pass.split(":")[0];
-    String user_pass = pass.split(":")[1];
-
-    if(_users.containsKey(user)) {
-      if(_users[user].password != user_pass) {
-        _invalid_password(socket,user);
+    
+    server_dispatcher.register((RawMessageEvent event) {
+      if(event.message.trim().startsWith("PING")) {
+        event.socket.write("PONG " + event.message.substring(5) + "\r\n");
       }
-
-      _handle_connection(socket, _users[user]);
-    }
-  }
-
-  serve() {
-    ServerSocket.bind(new InternetAddress("127.0.0.1"), _server_port).then((ServerSocket socket) {
-      print("Successfully started server on port " + _server_port.toString());
-      socket.listen((Socket client) {
-        print("Client at address " + client.remoteAddress.address + " is attempting to connect.");
-        client.listen((List<int> data) {
-          String message = String.fromCharCode(data);
-          message = message.trim();
-
-          String cmd = message.split(" ")[0];
-          if(cmd.contains("PASS")) {
-            _handle_pass(client, message.split(" ")[1]);
-          }
-        });
-      });
     });
+
+    client_start();
+    server_start();
   }
 
 }

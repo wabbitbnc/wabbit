@@ -1,4 +1,4 @@
-import '../lib/src/core/core.dart';
+import 'package:dartboard/src/core/core.dart';
 
 import "dart:io";
 
@@ -11,10 +11,9 @@ main(List<String> args) {
   if(args.length > 1)
     _print_help();
 
-  String path = "dartboard.ini";
+  String path = "dartboard.yaml";
   if(args.length == 1)
     path = args[0];
 
   Core core = new Core(path);
-  core.serve();
 }

@@ -1,27 +1,18 @@
 part of dartboard;
 
 class User {
-  String password;
-  Server server;
+  final Server server;
+  final String password;
 
-  User(Server serv, String pass) {
-    this.password = pass;
-    this.server = serv;
-  }
+  User(this.server, this.password);
 }
 
 class Server {
-  String address;
-  int port;
+  final String address;
+  final int port;
 
   String nickname;
   String realname;
 
-  Server(String addr, int serv_port, String nick, String real) {
-    this.address = addr;
-    this.port = serv_port;
-
-    this.nickname = nick;
-    this.realname = real;
-  }
+  Server(this.address, this.port, this.nickname, this.realname);
 }

@@ -8,7 +8,7 @@ import "package:ini/ini.dart";
 
 class Network {
 
-  String _bnc_name = "dartboard";
+  final String _bnc_name = "dartboard";
 
   int _server_port = 6667;
 
@@ -61,7 +61,6 @@ class Network {
         });
       });
     });
-
   }
 
 }

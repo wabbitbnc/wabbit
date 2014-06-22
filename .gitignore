@@ -9,5 +9,9 @@ packages/
 *.js.deps
 *.js.map
 
+# Don't include IntelliJ stuff either.
+*.iml
+.idea/
+
 # Include when developing application packages.
 pubspec.lock

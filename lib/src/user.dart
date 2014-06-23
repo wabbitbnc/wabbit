@@ -23,7 +23,6 @@ class Server {
     for(String channel in channels) {
       connection.write(":" + nickname + "JOIN " + channel);
       irc_client_dispatcher.post(new ConnectionAccessEvent(connection.user, (Connection client) {
-        print("half.");
         client.write("NAMES " + channel);
         client.write("TOPIC " + channel);
       }));

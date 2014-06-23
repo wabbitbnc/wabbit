@@ -1,6 +1,5 @@
 library dartboard._core;
 
-import "dart:async";
 import "dart:io";
 
 import "package:dartboard/dartboard.dart";
@@ -18,7 +17,10 @@ class Core {
 
     var conf = loadYaml(file.readAsStringSync());
 
-    if(conf["server"] != null && conf["server"]["port"] != null) Settings.server_port = conf["server"]["port"];
+    if(conf["server"] != null) {
+      if(conf["server"]["addr"] != null) Settings.server_addr = conf["server"]["addr"];
+      if(conf["server"]["port"] != null) Settings.server_port = conf["server"]["port"];
+    }
 
     if(conf["users"] != null) {
       Map users = conf["users"];
@@ -32,9 +34,24 @@ class Core {
       }
     }
     
-    irc_client_dispatcher.register((RawMessageEvent event) {
+    bnc_dispatcher.register((MessageEvent event) {
+      String channel_name = event.message.split(" ")[1];
+      if(event.message.toUpperCase().startsWith("JOIN"))
+        event.connection.user.server.channels.add(channel_name);
+      if(event.message.toUpperCase().startsWith("PART"))
+        for(String channel in event.connection.user.server.channels) {
+          if(channel == channel_name)
+            event.connection.user.server.channels.remove(channel);
+        }
+    });
+    
+    bnc_dispatcher.register((ConnectionAuthEvent event) {
+      event.connection.user.server.updateChannels(event.connection);
+    });
+    
+    irc_client_dispatcher.register((MessageEvent event) {
       if(event.message.trim().startsWith("PING")) {
-        event.socket.write("PONG " + event.message.substring(5) + "\r\n");
+        event.connection.write("PONG " + event.message.substring(5) + "\r\n");
       }
     });
 

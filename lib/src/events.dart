@@ -3,18 +3,27 @@ part of dartboard;
 EventDispatcher irc_client_dispatcher = new EventDispatcher();
 EventDispatcher bnc_dispatcher = new EventDispatcher();
 
-class RawMessageEvent {
-  Socket socket;
-  User user;
+class MessageEvent {
+  Connection connection;
   String message;
 
-  RawMessageEvent(this.socket, this.user, this.message);
+  MessageEvent(this.connection, this.message);
 }
 
-class SocketAccessEvent {
+class ConnectionAccessEvent {
   User user;
   Function callback;
   String address = null;
   
-  SocketAccessEvent(this.user, this.callback, {this.address});
+  ConnectionAccessEvent(this.user, this.callback, {this.address});
+}
+
+class ConnectionEvent {
+  Connection connection;
+  
+  ConnectionEvent(this.connection);
+}
+
+class ConnectionAuthEvent extends ConnectionEvent {
+  ConnectionAuthEvent(Connection connection) : super(connection);
 }

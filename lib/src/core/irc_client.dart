@@ -24,8 +24,11 @@ _handle_client(Connection connection) {
   
   bnc_dispatcher.register((MessageEvent event) {
     if(connection.user == event.connection.user) {
-      if(!event.message.startsWith("PASS") && !event.message.startsWith("USER") && !event.message.startsWith("QUIT"))
+      if(!event.message.toUpperCase().startsWith("PASS") && !event.message.toUpperCase().startsWith("USER") && !event.message.toUpperCase().startsWith("QUIT"))
         connection.write(event.message);
+      if(event.message.toUpperCase().startsWith("QUIT")) {
+        connection.socket.close();
+      }
     }
   });
   

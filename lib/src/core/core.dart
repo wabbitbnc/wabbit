@@ -18,8 +18,8 @@ class Core {
     var conf = loadYaml(file.readAsStringSync());
 
     if(conf["server"] != null) {
-      if(conf["server"]["addr"] != null) Settings.server_addr = conf["server"]["addr"];
-      if(conf["server"]["port"] != null) Settings.server_port = conf["server"]["port"];
+      if(conf["server"]["port"] != null) { Settings.server_port = conf["server"]["port"]; }
+      if(conf["server"]["addr"] != null) { Settings.server_addr = conf["server"]["addr"]; }
     }
 
     if(conf["users"] != null) {

@@ -6,7 +6,13 @@ class Connection {
   Socket socket;
   User user;
   
-  Connection(this.socket, this.user);
+  bool closed = false;
+  
+  Connection(this.socket, this.user) {
+    socket.done.then((val) {
+      closed = true;
+    });
+  }
   
   write(String message) {
     socket.write(message + _formatting);
@@ -19,7 +25,11 @@ class Connection {
   }
   
   close() {
+    if(closed)
+      return;
+    
     socket.close();
+    closed = true;
   }
 }
 

@@ -11,6 +11,24 @@ _invalid_password(BncConnection connection, String user) {
   connection.close();
 }
 
+DateTime pong = null;
+_connection_ping(BncConnection connection) {
+  if(connection.closed)
+    return;
+  
+  (new Future.delayed(new Duration(seconds: 15))).then((par) {
+    connection.write("PING :" + Settings.server_addr);
+  
+    (new Future.delayed(new Duration(seconds: 5))).then((par1) {
+      if(pong == null || (new DateTime.now()).difference(pong).inSeconds >= 5) {
+        connection.close();
+      } else {
+        _connection_ping(connection);
+      }
+    });
+  });
+}
+
 _handle_connection(BncConnection connection, String message) {
    print(message);
    if(!connection.authenticated && message.startsWith("USER"))
@@ -63,26 +81,16 @@ server_start() {
       BncConnection connection = new BncConnection(client, null);
       
       print("Client at address " + connection.socket.remoteAddress.address + " is attempting to connect.");
-      client.timeout(new Duration(seconds: 30), onTimeout: (EventSink sink) {
-        connection.write("PING :" + Settings.server_addr);
-        
-        bool pong = false;
-        connection.listen((String message) {
-          if(message.startsWith("PONG")) {
-            pong = true;
-          }
-        });
-        
-        (new Future.delayed(new Duration(seconds: 10))).then((par) {
-          if(!pong)
-            connection.close();
-        });
-      });
+      _connection_ping(connection);
       
       connection.listen((String message) {
         String cmd = message.split(" ")[0];
-                
-        if(cmd.startsWith("PASS") && !connection.authenticated) {
+        
+        if(cmd.toUpperCase().startsWith("PONG")) {
+          pong = new DateTime.now();
+        }
+                        
+        if(cmd.toUpperCase().startsWith("PASS") && !connection.authenticated) {
           String pass = message.split(" ")[1];
           if(_handle_pass(connection, pass)) {
             connection.user = Settings.users[pass.split(":")[0]];
@@ -92,5 +100,6 @@ server_start() {
           _handle_connection(connection, message);
       });
     });
+    
   });
 }

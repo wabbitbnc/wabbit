@@ -16,7 +16,28 @@ _handle_connection(Socket socket, User user, String message) {
    if(user == null)
      socket.write("NOTICE :You need to supply a password! Try '/PASS username:password'.\r\n");
    else
-     bouncer_dispatcher.post(new RawMessageEvent(socket, user, message));
+     bnc_dispatcher.post(new RawMessageEvent(socket, user, message));
+}
+
+_on_verified_connection(Socket socket, User user) {
+  irc_client_dispatcher.register((RawMessageEvent event) {
+    if(user == event.user) {
+      if(!event.message.startsWith("PING"))
+        socket.write(event.message + "\r\n");
+    }
+  });
+  
+  bnc_dispatcher.register((SocketAccessEvent event) {
+    if(event.address != null && event.address != socket.address.address)
+      return;
+    if(user == event.user) {
+      event.callback(socket);
+    }
+  });
+  
+  irc_client_dispatcher.post(new SocketAccessEvent(user, (Socket sock) {
+    sock.write("MOTD\r\n");
+  }));
 }
 
 bool _handle_pass(Socket socket, String pass) {
@@ -43,16 +64,11 @@ server_start() {
       client.transform(new Utf8Decoder(allowMalformed: true)).transform(new LineSplitter()).listen((String message) {
         String cmd = message.split(" ")[0];
         String pass = message.split(" ")[1];
-        
+                
         if(cmd.contains("PASS") && user == null) {
           if(_handle_pass(client, pass)) {
             user = Settings.users[pass.split(":")[0]];
-            server_dispatcher.register((RawMessageEvent event) {
-              if(user == event.user) {
-                if(!event.message.startsWith("PING"))
-                  client.write(event.message + "\r\n");
-              }
-            });
+            _on_verified_connection(client, user);
           }
         } else
           _handle_connection(client, user, message);

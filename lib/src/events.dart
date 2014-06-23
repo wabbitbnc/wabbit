@@ -1,7 +1,7 @@
 part of dartboard;
 
-EventDispatcher server_dispatcher = new EventDispatcher();
-EventDispatcher bouncer_dispatcher = new EventDispatcher();
+EventDispatcher irc_client_dispatcher = new EventDispatcher();
+EventDispatcher bnc_dispatcher = new EventDispatcher();
 
 class RawMessageEvent {
   Socket socket;
@@ -9,4 +9,12 @@ class RawMessageEvent {
   String message;
 
   RawMessageEvent(this.socket, this.user, this.message);
+}
+
+class SocketAccessEvent {
+  User user;
+  Function callback;
+  String address = null;
+  
+  SocketAccessEvent(this.user, this.callback, {this.address});
 }

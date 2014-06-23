@@ -7,20 +7,29 @@ import "dart:convert";
 import "package:dartboard/dartboard.dart";
 
 _handle_client(Socket socket, User user) {
-  socket.write("USER " + user.server.username + " 0 * :" + user.server.realname + "\r\n");
+  socket.write("USER " + user.server.username + " 8 * :" + user.server.realname + "\r\n");
   socket.write("NICK " + user.server.nickname + "\r\n");
 
   socket.transform(new Utf8Decoder(allowMalformed: true)).transform(new LineSplitter()).listen((String message) {
     print(message);
-    server_dispatcher.post(new RawMessageEvent(socket, user, message));
+    irc_client_dispatcher.post(new RawMessageEvent(socket, user, message));
   });
   
-  bouncer_dispatcher.register((RawMessageEvent event) {
+  irc_client_dispatcher.register((SocketAccessEvent event) {
+    if(user == event.user) {
+      event.callback(socket);
+    }
+  });
+  
+  bnc_dispatcher.register((RawMessageEvent event) {
+    if(event.address != null && event.address != socket.address.address)
+      return;
     if(user == event.user) {
       if(!event.message.startsWith("PASS") && !event.message.startsWith("USER") && !event.message.startsWith("QUIT"))
         socket.write(event.message + "\r\n");
     }
   });
+  
 }
 
 bool _client_status = true;

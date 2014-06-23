@@ -32,7 +32,7 @@ class Core {
       }
     }
     
-    server_dispatcher.register((RawMessageEvent event) {
+    irc_client_dispatcher.register((RawMessageEvent event) {
       if(event.message.trim().startsWith("PING")) {
         event.socket.write("PONG " + event.message.substring(5) + "\r\n");
       }

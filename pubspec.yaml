@@ -1,12 +1,11 @@
 name: dartboard
-version: "0.1.0"
-authors:
-- TrainerGuy22 <zeusintraining@gmail.com>
+version: 0.1.0
+author: TrainerGuy22 <zeusintraining@gmail.com>
 description: A simple IRC bouncer written in Dart, with most functionality provided through plugins.
 homepage: https://github.com/DirectMyFile/dartboard/
 environment:
   sdk: '>=1.2.0'
 dependencies:
+  args: '>=0.11.0+1 <0.12.0'
   event_dispatcher: '>=0.0.5 <0.1.0'
-  yaml: "0.9.0"
-  args: ">=0.11.0+1 <0.12.0"
+  quiver: '>=0.18.0 <0.19.0'

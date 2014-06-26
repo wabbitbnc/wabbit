@@ -1,4 +1,4 @@
-import 'package:dartboard/src/core/core.dart';
+import 'package:dartboard/dartboard.dart';
 
 import "dart:io";
 
@@ -11,13 +11,34 @@ _print_help() {
 
 main(List<String> args) {
   var parser = new ArgParser()
-  ..addOption("config", help: "The path to the YAML configuration file.");
+  ..addOption("working-dir", abbr: "d", help: "The working directory to run")
+  ..addFlag("help", abbr: "h", help: "Displays this help menu");
   
   var parsed = parser.parse(args);
+  
+  if (parsed['help']) {
+    print(parser.getUsage());
+    return;
+  }
 
-  String path = "dartboard.yaml";
-  if(parsed["config"] != null)
-    path = parsed["config"];
-
-  Core core = new Core(path);
+  if(parsed["working-dir"] != null)
+    Directory.current = new Directory(parsed["working-dir"]);
+  
+  var user_config = new Config("users.json");
+  var network_config = new Config("networks.json");
+  var server_config = new Config("server.json");
+  
+  var gen = new ConfigGenerator(user_config, network_config, server_config);
+  if (gen.needsGeneration) {
+    gen.configure();
+    gen.save();
+  } else {
+    user_config.load();
+    network_config.load();
+    server_config.load();
+  }
+  
+  Bouncer server = new Bouncer(user_config, network_config, server_config);
+  server.connect();
+  server.start();
 }

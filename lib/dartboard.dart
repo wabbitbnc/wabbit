@@ -1,14 +1,16 @@
 // dartboard - A simple IRC bouncer written in Dart.
 library dartboard;
 
-import "dart:collection";
-import "dart:io";
-import "dart:convert";
+import 'dart:io';
+import 'dart:convert';
+import 'dart:async';
 
-import 'package:event_dispatcher/event_dispatcher.dart';
+import 'package:quiver/pattern.dart' show escapeRegex;
 
-part "src/user.dart";
-part 'src/settings.dart';
-part "src/events.dart";
-part "src/colors.dart";
-part "src/connection.dart";
+part 'src/utils/colors.dart';
+part 'src/utils/config.dart';
+part 'src/utils/error.dart';
+part 'src/irc/handler.dart';
+part 'src/irc/server.dart';
+part 'src/irc/client.dart';
+part 'src/bouncer.dart';

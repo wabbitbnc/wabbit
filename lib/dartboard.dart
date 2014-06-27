@@ -5,8 +5,6 @@ import 'dart:io';
 import 'dart:convert';
 import 'dart:async';
 
-import 'package:quiver/pattern.dart' show escapeRegex;
-
 part 'src/utils/colors.dart';
 part 'src/utils/config.dart';
 part 'src/utils/error.dart';

@@ -5,9 +5,9 @@ class Config {
   File _file;
   var config = new Map<dynamic, dynamic>();
   
-  Config(String path) {
+  Config(String path, {String suffix : "config"}) {
     var sep = Platform.pathSeparator;
-    var abs = Directory.current.absolute.path + sep + "config";
+    var abs = Directory.current.absolute.path + sep + suffix;
     var configDir = new Directory(abs);
     if (!configDir.existsSync())
       configDir.createSync();

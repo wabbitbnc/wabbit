@@ -39,8 +39,6 @@ class Handler {
         case "005":
           intro.add(msg);
           break;
-        case "PONG":
-          break;
         default:
           server.sendToClients(msg);
       }

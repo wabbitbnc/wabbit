@@ -164,7 +164,7 @@ class VerifiedClient {
     switch (command) {
       case "USER":
       case "NICK":
-        return;
+        break;
       default:
         client.sendToServer(msg);
     }

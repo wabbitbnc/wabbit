@@ -8,44 +8,59 @@ class Handler {
   static final REGEX = new RegExp(r"^(?:[:](\S+) )?(\S+)(?: (?!:)(.+?))?(?: [:](.+))?$");
 
   final Server server;
-  final Socket socket;
+
+  Socket _socket;
+  Socket get socket => _socket;
 
   String networkName;
   bool _received = false;
   List<String> intro = [];
 
-  Handler(this.server, this.socket);
+  Handler(this.server);
+
+  /**
+   * Once closed, destroy this instance
+   */
+  void close() {
+    _socket.close();
+  }
 
   void listen() {
     var conf = server.bouncer.network_config["${server.uid}"]["${server.sid}"];
-    socket.transform(Bouncer.decoder).transform(Bouncer.splitter).listen((String msg) {
-      if (!_received) {
-        _received = true;
-        send("NICK ${conf['nickname']}");
-        send("USER ${conf['username']} 8 * :${conf['realname']}");
-        networkName = conf['name'];
-      }
+    runZoned(() {
+      Socket.connect(conf['address'], conf['port']).then((Socket socket) {
+        _socket = socket;
+        _socket.transform(Bouncer.decoder).transform(Bouncer.splitter).listen((String msg) {
+          if (!_received) {
+            _received = true;
+            send("NICK ${conf['nickname']}");
+            send("USER ${conf['username']} 8 * :${conf['realname']}");
+            networkName = conf['name'];
+          }
 
-      var matches = get_matches(msg);
-      var command = matches[2];
-
-      var chan;
-      switch (command) {
-        case "PING":
-          send("PONG :${matches[4]}");
-          break;
-        case "001":
-        case "002":
-        case "005":
-          intro.add(msg);
-          break;
-        default:
-          server.sendToClients(msg);
-      }
-    }).onError((err) {
+          var matches = get_matches(msg);
+          var command = matches[2];
+          switch (command) {
+            case "PING":
+              send("PONG :${matches[4]}");
+              break;
+            case "001":
+            case "002":
+            case "005":
+              intro.add(msg);
+              break;
+            default:
+              server.sendToClients(msg);
+          }
+        }).onError((err) {
+          server.messageClients("Disconnected!");
+          server.disconnect();
+        });
+      });
+    }, onError: (err) {
+      printError("bouncer->server handler connection", err);
       server.messageClients("Disconnected!");
-      socket.close();
-      server.bouncer.servers[server.uid].remove(this);
+      server.disconnect();
     });
   }
 
@@ -59,7 +74,7 @@ class Handler {
    */
   void sendServerIntro(Client client) {
     for (String s in intro)
-      client.socket.write(s + "\r\n");
+      client.send(s);
   }
 
   static List<String> get_matches(String line) {

@@ -28,24 +28,17 @@ class Bouncer {
       var id = int.parse(uid);
       runZoned(() {
         config.forEach((sid, conf) {
-          Server server;
-          runZoned(() {
-            Socket.connect(conf['address'], conf['port']).then((Socket socket) {
-              List<Server> serve = servers[id];
-              if (serve == null) {
-                serve = <Server>[];
-                servers[id] = serve;
-              }
-              server = new Server(this, id, int.parse(sid), socket);
-              serve.add(server);
-              server.listen();
-            });
-          }, onError: (err, stacktrace) {
-            server.messageClients("Disconnected!");
-          });
+          List<Server> serve = servers[id];
+          if (serve == null) {
+            serve = <Server>[];
+            servers[id] = serve;
+          }
+          var server = new Server(this, id, int.parse(sid));
+          serve.add(server);
+          server.connect();
         });
       }, onError: (err, stacktrace) {
-        printError("bouncer->server connection", "$err $stacktrace");
+        printError("bouncer->server connection iterator", "$err $stacktrace");
       });
     });
   }
@@ -67,7 +60,7 @@ class Bouncer {
         // Client will be added to the clients list when authenticated
         Client c = new Client(this, sock);
         c.send("NOTICE * :Authentication required (/PASS <user>/<network>:<pass>)");
-        c.authenticate();
+        c.handle();
       }).onError((err) {
         printError("client->server connection", err);
       });

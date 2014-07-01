@@ -26,29 +26,44 @@ class Server {
   Handler _handler;
   Handler get handler => _handler;
 
+  bool get connected => _handler != null;
+
+  Server(this.bouncer, this.uid, this.sid);
+
   /**
-   * Must be provided with a server socket
+   * Returns false if already disconnected, otherwise true
    */
-  Server(this.bouncer, this.uid, this.sid, Socket socket) {
-    _handler = new Handler(this, socket);
+  bool disconnect() {
+    if (!connected)
+      return false;
+    _handler.close();
+    _handler = null;
+    return true;
   }
 
-  void listen() {
+  /**
+   * Returns false if already connected, otherwise true
+   */
+  bool connect() {
+    if (connected)
+      return false;
+    _handler = new Handler(this);
     _handler.listen();
+    return true;
   }
 
   void messageClients(String msg) {
-      var conf = bouncer.network_config["${uid}"]["${sid}"];
-      msg = ":*status!bnc@dartboard PRIVMSG ${conf['nickname']} :$msg";
-      sendToClients(msg);
-    }
+    for (var c in getClients())
+      c.notify(msg);
+  }
 
   void sendToClients(String line) {
-    List<VerifiedClient> cs = bouncer.clients[uid];
-    if (cs == null)
-      return;
-    for (var c in cs) {
-      c.client.send(line);
-    }
+    for (var c in getClients())
+      c.send(line);
+  }
+
+  List<VerifiedClient> getClients() {
+    var clients = bouncer.clients[uid];
+    return clients != null ? clients : [];
   }
 }

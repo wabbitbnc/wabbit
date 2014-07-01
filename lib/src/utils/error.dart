@@ -1,7 +1,7 @@
 part of dartboard;
 
-printError(String section, String err) {
+printError(String section, dynamic err) {
   print("------- Error in $section -------");
-  print(err);
+  print("$err");
   print("------- End error in $section -------");
 }

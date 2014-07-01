@@ -22,12 +22,9 @@ main(List<String> args) {
   var user_config = new Config("users.json");
   var network_config = new Config("networks.json");
   var server_config = new Config("server.json");
-<<<<<<< HEAD
 
-=======
   var plugins_config = new Config("plugins.json");
-  
->>>>>>> branch 'master' of git@github.com:DirectMyFile/dartboard.git
+
   var gen = new ConfigGenerator(user_config, network_config, server_config);
   if (gen.needsGeneration) {
     gen.configure();
@@ -38,18 +35,11 @@ main(List<String> args) {
     server_config.load();
     plugins_config.load();
   }
-<<<<<<< HEAD
 
-  Bouncer server = new Bouncer(user_config, network_config, server_config);
-  server.connect();
-  server.start();
-=======
-  
   var plugin_loader = new PluginLoader(plugins_config);
   plugin_loader.initPlugins().then((result) {
     Bouncer server = new Bouncer(user_config, network_config, server_config);
     server.connect();
     server.start();
   });
->>>>>>> branch 'master' of git@github.com:DirectMyFile/dartboard.git
 }

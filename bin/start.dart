@@ -22,10 +22,10 @@ main(List<String> args) {
   var user_config = new Config("users.json");
   var network_config = new Config("networks.json");
   var server_config = new Config("server.json");
-
   var plugins_config = new Config("plugins.json");
 
-  var gen = new ConfigGenerator(user_config, network_config, server_config);
+  var gen = new ConfigGenerator(user_config, network_config,
+                                server_config, plugins_config);
   if (gen.needsGeneration) {
     gen.configure();
     gen.save();
@@ -36,8 +36,8 @@ main(List<String> args) {
     plugins_config.load();
   }
 
-  var plugin_loader = new PluginLoader(plugins_config);
-  plugin_loader.initPlugins().then((result) {
+  var loader = new PluginLoader(plugins_config);
+  loader.load().then((_) {
     Bouncer server = new Bouncer(user_config, network_config, server_config);
     server.connect();
     server.start();

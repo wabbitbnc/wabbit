@@ -1,100 +1,108 @@
 part of dartboard;
-  
+
 class Plugin {
+
   final String name;
-  final String directoryName;
-  final String info;
-  
-  final String version;
-  final String author;
-  
-  String mainFile;
-  
-  Plugin(this.name, this.directoryName, this.info, {this.version, this.author, this.mainFile : 'bin/start.dart'});
+  final Isolate isolate;
+  final ReceivePort rp;
+  final SendPort sp;
+
+  Plugin(this.name, this.isolate, this.rp, this.sp);
 }
- 
-class Prefix {
-  final String prefix;
-  final Function getPath;
-  final Function create;
-  
-  Prefix(this.prefix, String this.getPath(String), Future this.create(Prefix, String));
+
+class PluginManager {
+
+  Map<String, Plugin> _plugins = new Map();
+
+  bool add(Plugin p) {
+    if (_plugins.containsKey(p.name))
+      return false;
+    _plugins[p.name] = p;
+    return true;
+  }
+
+  bool loaded(String name) {
+    return _plugins.containsKey(name);
+  }
 }
- 
+
 class PluginLoader {
-  Map<String, Prefix> _prefixes = new HashMap<String, Prefix>(); 
-  Config _config;
-  
-  PluginLoader(this._config);
-    
-  deletePlugin(String pluginName) {
-    List<String> config = _config["plugins"];
-    config.remove(pluginName);
-    _config["plugins"] = config;
+
+  final PluginManager manager = new PluginManager();
+  final Config conf;
+  Directory _dir;
+
+  PluginLoader(this.conf) {
+    var sep = Platform.pathSeparator;
+    var cur = Directory.current.absolute.path;
+    _dir = new Directory(cur + sep + "plugins");
   }
-   
-  Plugin getPluginForPath(String path) {
-    Config conf = new Config(path + '/bullseye.json', suffix: "plugins");
-    if(!conf.exists)
-      throw "Invalid plugin structure.";
-    conf.load();
-      
-    Plugin plugin = new Plugin(conf['name'], conf['directoryName'], conf['info'], version: conf['version'], author: conf['author']);
-    if(conf['mainFile'] != null) plugin.mainFile = conf['mainFile'];
-    return plugin;
+
+  Future load() {
+    List<Future> futures = new List(2);
+    futures[0] = _loadDirectory();
+    futures[1] = _loadGit();
+    return Future.wait(futures);
   }
-   
-  Future initPlugin(Plugin plugin) {
-    return new Future((){});
-  }
-  
-  addProtocol(Prefix prefix) {
-    _prefixes[prefix.prefix] = prefix;
-  }
-  
-  Prefix getPrefix(String pluginName) {
-    return _prefixes[pluginName.split(':')[0]];
-  }
-  
-  Future initPlugins() {
-    List<String> plugins = _config["plugins"];
-    var group = new FutureGroup();
-    
-    for(String pluginName in plugins) {
-      var completer = new Completer();
-      group.add(completer.future);
-      
-      Future future = () {
-        if(!pluginName.contains(':'))
-          return null;
-        
-        var prefix = this.getPrefix(pluginName);
-         
-        if(prefix != null) {
-          if(new File(Directory.current.absolute.path + '/plugins/' + prefix.getPath(pluginName)).existsSync())
-            return null;
-          
-          // Just in case we add something like HTTP, where you use : after you declare the protocol. Like Github branches, etc.
-          Future future = _prefixes[prefix].create(prefix, pluginName.split(':').sublist(1).join(':'));
-          return future;  
-        }
-      }();
-      
-      if(future != null) {
-        future.then((resultA) {
-          Plugin plugin = getPluginForPath(pluginName);
-          initPlugin(plugin).then((resultB) => completer.complete(resultB));
-        })
-        ..catchError((Error err) {
-          print('Plugin ' + pluginName + ' failed to load. Removing from the configuration file.');
-          print(Error.safeToString(err));
-          deletePlugin(pluginName);
-        });
-      }
+
+  Future _loadDirectory() {
+    if (!_dir.existsSync()) {
+      _dir.createSync();
+      return new Future.sync(() { return []; });
     }
-      
-    return group.wait(callback: (resultC) {
-      _config.save();
+
+    List<String> globalPlugins = conf['global'];
+    List<Future<Isolate>> futures = [];
+    List<FileSystemEntity> plugins = _dir.listSync();
+    plugins.forEach((FileSystemEntity entity) {
+      if (entity is File || entity is Link)
+        return;
+      Directory d = entity.absolute;
+      var sep = Platform.pathSeparator;
+
+      var infoFile = new File(d.path + sep + "bin" + sep + "info.json");
+      var info = JSON.decode(infoFile.readAsStringSync());
+
+      if (info['name'] == null) {
+        throw new Exception("Missing name field in ${infoFile.path}");
+      } else if (!globalPlugins.contains(info['name'])) {
+        print("Skipping found plugin '${info['name']}', but not configured to load");
+        return;
+      }
+
+      ReceivePort port = new ReceivePort();
+
+      var mainFile = new File(d.path + sep + "bin" + sep + "main.dart");
+      Future<Isolate> fut = Isolate.spawnUri(new Uri.file(mainFile.path), [], port.sendPort);
+
+      Completer completer = new Completer();
+      fut.then((Isolate iso) {
+        StreamSubscription ss;
+        var time = new Timer(new Duration(seconds: 5), () {
+          print("Plugin '${info['name']}' did not register as a plugin in time, skipping");
+          if (ss != null)
+            ss.cancel();
+        });
+
+        ss = port.listen((data) {
+          if (data is SendPort) {
+            time.cancel();
+            time = null;
+
+            manager.add(new Plugin(info['name'], iso, port, data));
+            print("Plugin '${info['name']}' was loaded successfully");
+            completer.complete();
+          }
+        });
+      });
+      futures.add(completer.future);
     });
+    return Future.wait(futures);
   }
+
+  Future _loadGit() {
+    // TODO: handle git cloning and loading
+    return new Future.sync(() {});
+  }
+
 }

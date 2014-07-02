@@ -1,4 +1,4 @@
-part of dartboard;
+part of wabbit;
 
 /**
  * Handles Bouncer -> IRC server connections.

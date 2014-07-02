@@ -1,5 +1,5 @@
-// dartboard - A simple IRC bouncer written in Dart.
-library dartboard;
+// A simple IRC bouncer written in Dart.
+library wabbit;
 
 import 'dart:convert';
 import 'dart:isolate';

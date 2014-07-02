@@ -1,4 +1,4 @@
-part of dartboard;
+part of wabbit;
 
 printError(String section, dynamic err) {
   print("------- Error in $section -------");

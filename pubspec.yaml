@@ -1,10 +1,12 @@
-name: dartboard
+name: wabbit
 version: 0.1.0
-author: TrainerGuy22 <zeusintraining@gmail.com>
+authors:
+- TrainerGuy22 <zeusintraining@gmail.com>
+- samrg472 <samrg472@gmail.com>
 description: A simple IRC bouncer written in Dart, with most functionality provided through plugins.
-homepage: https://github.com/DirectMyFile/dartboard/
+homepage: https://github.com/wabbitbnc
 environment:
   sdk: '>=1.2.0'
 dependencies:
   args: '>=0.11.0+1 <0.12.0'
-  event_dispatcher: '>=0.0.5 <0.1.0'
+  event_dispatcher: '>=0.1.0 <0.2.0'

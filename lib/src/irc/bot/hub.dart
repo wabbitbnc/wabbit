@@ -1,4 +1,4 @@
-part of dartboard;
+part of wabbit;
 
 class Hub {
 

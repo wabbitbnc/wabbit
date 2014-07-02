@@ -1,4 +1,4 @@
-part of dartboard;
+part of wabbit;
 
 class FutureGroup<E> {
   Completer _completer = new Completer();

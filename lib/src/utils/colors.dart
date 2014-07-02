@@ -1,4 +1,4 @@
-part of dartboard;
+part of wabbit;
 
 abstract class Color {
   static final String BLUE = "\u000312";

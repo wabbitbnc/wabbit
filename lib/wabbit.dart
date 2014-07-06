@@ -2,9 +2,10 @@
 library wabbit;
 
 import 'dart:convert';
-import 'dart:isolate';
 import 'dart:async';
 import 'dart:io';
+
+import 'package:plugins/loader.dart';
 
 part 'src/bouncer.dart';
 

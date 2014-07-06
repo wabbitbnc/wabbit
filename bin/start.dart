@@ -1,8 +1,8 @@
+import 'package:plugins/loader.dart';
 import 'package:wabbit/wabbit.dart';
+import "package:args/args.dart";
 
 import "dart:io";
-
-import "package:args/args.dart";
 
 main(List<String> args) {
   var parser = new ArgParser()
@@ -36,8 +36,14 @@ main(List<String> args) {
     plugins_config.load();
   }
 
-  var loader = new PluginLoader(plugins_config);
-  loader.load().then((_) {
+  var loader = new Plugins(plugins_config);
+  loader.load().then((List<List<Plugin>> _pl) {
+    {
+      List<Plugin> plugins = new List();
+      plugins.addAll(_pl[0]);
+      plugins.addAll(_pl[1]);
+      print("Registered plugins: ${plugins}");
+    }
     Bouncer server = new Bouncer(user_config, network_config, server_config);
     server.connect();
     server.start();

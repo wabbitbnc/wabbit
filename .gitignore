@@ -3,6 +3,7 @@ build/
 packages/
 bin/packages
 
+.buildlog
 .project
 .settings/
 run/

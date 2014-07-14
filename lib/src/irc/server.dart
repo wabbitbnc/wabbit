@@ -52,7 +52,7 @@ class Server {
     return true;
   }
 
-  void messageClients(String msg) {
+  void notifyClients(String msg) {
     for (var c in getClients())
       c.notify(msg);
   }

@@ -11,17 +11,25 @@ class Handler {
 
   Socket _socket;
   Socket get socket => _socket;
+  StreamSubscription _ss;
 
   String networkName;
+  bool _softDisconnect = true;
+
   bool _received = false;
   List<String> intro = [];
 
   Handler(this.server);
 
   /**
-   * Once closed, destroy this instance
+   * Once closed, destroy this instance.
+   * Overrides [_cleanup] handlers on [_ss]. The override is to ensure the
+   * client doesn't get messaged twice about a disconnection.
    */
   void close() {
+    _ss.onError((err) {});
+    _ss.onDone(() {});
+
     _socket.destroy();
   }
 
@@ -30,7 +38,7 @@ class Handler {
     runZoned(() {
       Socket.connect(conf['address'], conf['port']).then((Socket socket) {
         _socket = socket;
-        var ss = _socket.transform(Bouncer.decoder).transform(Bouncer.splitter).listen((String msg) {
+        _ss = _socket.transform(Bouncer.decoder).transform(Bouncer.splitter).listen((String msg) {
           if (!_received) {
             _received = true;
             send("NICK ${conf['nickname']}");
@@ -53,8 +61,8 @@ class Handler {
               server.sendToClients(msg);
           }
         });
-        ss.onDone(_cleanup);
-        ss.onError(_cleanup);
+        _ss.onDone(_cleanup);
+        _ss.onError(_cleanup);
       });
     }, onError: (err) {
       printError("bouncer->server handler connection", err,
@@ -63,8 +71,7 @@ class Handler {
                   "Client ID: ${server.uid}",
                   "Connected clients: ${server.getClients().length}"
                 ]);
-      server.messageClients("Disconnected!");
-      server.disconnect();
+      _cleanup();
     });
   }
 
@@ -82,7 +89,7 @@ class Handler {
   }
 
   void _cleanup([_]) {
-    server.messageClients("Disconnected!");
+    server.notifyClients("Disconnected!");
     server.disconnect();
   }
 

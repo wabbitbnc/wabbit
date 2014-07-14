@@ -6,7 +6,7 @@ authors:
 description: A simple IRC bouncer written in Dart, with most functionality provided through plugins.
 homepage: https://github.com/wabbitbnc
 environment:
-  sdk: '>=1.2.0'
+  sdk: '>=1.5.3'
 dependencies:
   args: '>=0.11.0+1 <0.12.0'
   event_dispatcher: '>=0.1.0 <0.2.0'

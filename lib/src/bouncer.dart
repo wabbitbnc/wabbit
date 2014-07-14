@@ -25,8 +25,8 @@ class Bouncer {
    */
   void connect() {
     network_config.config.forEach((uid, config) {
-      var id = int.parse(uid);
       runZoned(() {
+        var id = int.parse(uid);
         config.forEach((sid, conf) {
           List<Server> serve = servers[id];
           if (serve == null) {

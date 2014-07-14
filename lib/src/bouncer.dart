@@ -58,9 +58,9 @@ class Bouncer {
         printError("ServerSocket binding", err);
       }).listen((Socket sock) {
         // Client will be added to the clients list when authenticated
-        Client c = new Client(this, sock);
-        c.send("NOTICE * :Authentication required (/PASS <user>/<network>:<pass>)");
-        c.handle();
+        new Client(this, sock)
+        ..send("NOTICE * :Authentication required (/PASS <user>/<network>:<pass>)")
+        ..handle();
       }).onError((err) {
         printError("client->server connection", err);
       });

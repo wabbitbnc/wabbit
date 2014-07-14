@@ -12,7 +12,7 @@ class Client {
    */
   bool get authenticated => this is VerifiedClient;
 
-  Timer time;
+  Timer _time;
 
   Client(this.bouncer, this.socket);
 
@@ -68,7 +68,7 @@ class Client {
               return;
             }
 
-            time.cancel();
+            _time.cancel();
             send("NOTICE * :Successfully logged in");
 
             var client = new VerifiedClient(uid, server, _ss, bouncer, socket);
@@ -85,9 +85,9 @@ class Client {
       socket.close();
     });
 
-    time = new Timer(new Duration(seconds: 15), () {
+    _time = new Timer(new Duration(seconds: 15), () {
       socket.close();
-      time = null;
+      _time = null;
     });
   }
 
@@ -101,10 +101,6 @@ class Client {
 
 class VerifiedClient extends Client {
 
-  /**
-   * The user ID
-   * -1 means unauthenticated
-   */
   final int uid;
 
   final Server server;
@@ -155,7 +151,11 @@ class VerifiedClient extends Client {
         });
      });
     }, onError: (err) {
-      printError("Client listener (Authenticated)", err);
+      printError("Client listener (Authenticated)", err,
+                [
+                  "Server ID: ${server.sid}",
+                  "Client ID: ${uid}"
+                ]);
       socket.close();
       bouncer.clients[uid].remove(this);
     });

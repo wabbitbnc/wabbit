@@ -58,7 +58,12 @@ class Handler {
         });
       });
     }, onError: (err) {
-      printError("bouncer->server handler connection", err);
+      printError("bouncer->server handler connection", err,
+                [
+                  "Server ID: ${server.sid}",
+                  "Client ID: ${server.uid}",
+                  "Connected clients: ${server.bouncer.clients[server.uid].length}"
+                ]);
       server.messageClients("Disconnected!");
       server.disconnect();
     });

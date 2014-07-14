@@ -76,15 +76,17 @@ class Client {
             var client = new VerifiedClient(uid, server, _ss, bouncer, socket);
             auth.authenticated(client);
 
-            client.server.handler.sendServerIntro(client);
-            client.server.handler.send("MOTD");
+            if (client.server.connected) {
+              client.server.handler.sendServerIntro(client);
+              client.server.handler.send("MOTD");
+            }
             client.handle();
           }
         });
       });
     }, onError: (err, stacktrace) {
       printError("Client listener (Unauthenticated)", "$err $stacktrace");
-      socket.destroy();
+      _cleanup();
     });
 
     _time = new Timer(new Duration(seconds: 15), () {
@@ -175,8 +177,7 @@ class VerifiedClient extends Client {
                   "Server ID: ${server.sid}",
                   "Client ID: ${uid}"
                 ]);
-      socket.destroy();
-      server.getClients().remove(this);
+      _cleanup();
     });
   }
 
@@ -188,6 +189,6 @@ class VerifiedClient extends Client {
   void _cleanup() {
     super._cleanup();
     server.getClients().remove(this);
-    print("${server.getClients().length}");
+    print("Remaining clients connected: ${server.getClients().length}");
   }
 }

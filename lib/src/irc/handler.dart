@@ -22,7 +22,7 @@ class Handler {
    * Once closed, destroy this instance
    */
   void close() {
-    _socket.close();
+    _socket.destroy();
   }
 
   void listen() {

@@ -30,7 +30,7 @@ class Handler {
     runZoned(() {
       Socket.connect(conf['address'], conf['port']).then((Socket socket) {
         _socket = socket;
-        _socket.transform(Bouncer.decoder).transform(Bouncer.splitter).listen((String msg) {
+        var ss = _socket.transform(Bouncer.decoder).transform(Bouncer.splitter).listen((String msg) {
           if (!_received) {
             _received = true;
             send("NICK ${conf['nickname']}");
@@ -52,10 +52,9 @@ class Handler {
             default:
               server.sendToClients(msg);
           }
-        }).onError((err) {
-          server.messageClients("Disconnected!");
-          server.disconnect();
         });
+        ss.onDone(_cleanup);
+        ss.onError(_cleanup);
       });
     }, onError: (err) {
       printError("bouncer->server handler connection", err,
@@ -80,6 +79,11 @@ class Handler {
   void sendServerIntro(Client client) {
     for (String s in intro)
       client.send(s);
+  }
+
+  void _cleanup([_]) {
+    server.messageClients("Disconnected!");
+    server.disconnect();
   }
 
   static List<String> get_matches(String line) {

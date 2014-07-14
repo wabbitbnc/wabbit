@@ -157,6 +157,9 @@ class VerifiedClient extends Client {
             case "USER":
             case "NICK":
               break;
+            case "QUIT":
+              _cleanup();
+              break;
             case "PRIVMSG":
               if (matches[3] != _hub.nickname)
                 continue def;

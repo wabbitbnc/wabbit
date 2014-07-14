@@ -26,6 +26,8 @@ class Client {
   void handle() {
     runZoned(() {
       _ss = socket.listen(null);
+      _initCleanup();
+
       _ss.onData((List<int> incoming) {
         List<String> data = Bouncer.splitter.convert(Bouncer.decoder.convert(incoming));
         data.forEach((String msg) {
@@ -82,11 +84,11 @@ class Client {
       });
     }, onError: (err, stacktrace) {
       printError("Client listener (Unauthenticated)", "$err $stacktrace");
-      socket.close();
+      socket.destroy();
     });
 
     _time = new Timer(new Duration(seconds: 15), () {
-      socket.close();
+      socket.destroy();
       _time = null;
     });
   }
@@ -96,6 +98,22 @@ class Client {
     for (var net in bouncer.network_config[uid.toString()].values) {
       send("NOTICE * :${net['name']}");
     }
+  }
+
+  void _initCleanup() {
+    _ss.onError((err) {
+      _cleanup();
+    });
+
+    _ss.onDone(() {
+      _cleanup();
+    });
+  }
+
+  void _cleanup() {
+    print("Cleaning up disconnected client...");
+    _ss.cancel();
+    socket.destroy();
   }
 }
 
@@ -126,6 +144,7 @@ class VerifiedClient extends Client {
   @override
   void handle() {
     runZoned(() {
+      _initCleanup();
       _ss.onData((List<int> incoming) {
         List<String> data = Bouncer.splitter.convert(Bouncer.decoder.convert(incoming));
         data.forEach((String msg) {
@@ -156,12 +175,19 @@ class VerifiedClient extends Client {
                   "Server ID: ${server.sid}",
                   "Client ID: ${uid}"
                 ]);
-      socket.close();
-      bouncer.clients[uid].remove(this);
+      socket.destroy();
+      server.getClients().remove(this);
     });
   }
 
   dynamic getUserConf(String conf) {
     return bouncer.user_config[uid.toString()][conf];
+  }
+
+  @override
+  void _cleanup() {
+    super._cleanup();
+    server.getClients().remove(this);
+    print("${server.getClients().length}");
   }
 }

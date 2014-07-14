@@ -62,7 +62,7 @@ class Handler {
                 [
                   "Server ID: ${server.sid}",
                   "Client ID: ${server.uid}",
-                  "Connected clients: ${server.bouncer.clients[server.uid].length}"
+                  "Connected clients: ${server.getClients().length}"
                 ]);
       server.messageClients("Disconnected!");
       server.disconnect();

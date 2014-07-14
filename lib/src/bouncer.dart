@@ -50,22 +50,24 @@ class Bouncer {
     var addr = server_config['bind_address'];
     var port = server_config['port'];
     addr = addr == "any" ? InternetAddress.ANY_IP_V4 : addr;
-    ServerSocket.bind(addr, port).then((ServerSocket socket) {
-      print("Listening to ${server_config['bind_address']} on port $port");
-      this.address = socket.address.host;
-      this.port = port;
-      socket.handleError((err) {
-        printError("ServerSocket binding", err);
-      }).listen((Socket sock) {
-        // Client will be added to the clients list when authenticated
-        new Client(this, sock)
-        ..send("NOTICE * :Authentication required (/PASS <user>/<network>:<pass>)")
-        ..handle();
-      }).onError((err) {
-        printError("client->server connection", err);
+    runZoned(() {
+      ServerSocket.bind(addr, port).then((ServerSocket socket) {
+        print("Listening to ${server_config['bind_address']} on port $port");
+        this.address = socket.address.host;
+        this.port = port;
+        socket.handleError((err) {
+          printError("ServerSocket binding", err);
+        }).listen((Socket sock) {
+          // Client will be added to the clients list when authenticated
+          new Client(this, sock)
+            ..send("NOTICE * :Authentication required (/PASS <user>/<network>:<pass>)")
+            ..handle();
+        }).onError((err) {
+          printError("client->server connection", err);
+        });
       });
+    }, onError: (err) {
+      printError("ServerSocket listener", err);
     });
   }
-
-
 }

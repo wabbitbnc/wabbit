@@ -42,7 +42,7 @@ main(List<String> args) {
       List<Plugin> plugins = new List();
       plugins.addAll(_pl[0]);
       plugins.addAll(_pl[1]);
-      print("Registered plugins: ${plugins}");
+      print("Registered plugins: ${plugins.join(", ")}");
     }
     Bouncer server = new Bouncer(user_config, network_config, server_config);
     server.connect();

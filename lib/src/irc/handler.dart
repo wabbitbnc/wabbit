@@ -6,6 +6,7 @@ class Handler {
    * Regex for parsing IRC messages
    */
   static final REGEX = new RegExp(r"^(?:[:](\S+) )?(\S+)(?: (?!:)(.+?))?(?: [:](.+))?$");
+  static final HOSTMASK_REGEX = new RegExp(r"!~|!|@");
 
   final Server server;
 
@@ -18,19 +19,27 @@ class Handler {
 
   bool _received = false;
   List<String> intro = [];
+  List<String> channels = [];
 
   Handler(this.server);
 
-  /**
-   * Once closed, destroy this instance.
-   * Overrides [_cleanup] handlers on [_ss]. The override is to ensure the
-   * client doesn't get messaged twice about a disconnection.
-   */
-  void close() {
-    _ss.onError((err) {});
-    _ss.onDone(() {});
+  void init(VerifiedClient client) {
+    var conf = server.bouncer.network_config["${server.uid}"]["${server.sid}"];
 
-    _socket.destroy();
+    // Send intro
+    for (String s in intro)
+      client.send(s);
+
+    // Send MOTD
+    send("MOTD");
+
+    // Send channels
+    for (String s in channels) {
+      client.send(":${conf['nickname']} JOIN $s");
+      send("TOPIC $s");
+      send("NAMES $s");
+      send("WHO $s");
+    }
   }
 
   void listen() {
@@ -46,7 +55,7 @@ class Handler {
             networkName = conf['name'];
           }
 
-          var matches = get_matches(msg);
+          var matches = getMatches(msg);
           var command = matches[2];
           switch (command) {
             case "PING":
@@ -57,7 +66,22 @@ class Handler {
             case "005":
               intro.add(msg);
               break;
-            default:
+            case "KICK":
+              var parsed = matches[3].split(" ");
+              if (parsed[1] == conf['nickname'])
+                channels.remove(parsed[0]);
+              continue def;
+            case "PART":
+              var parsed = parseHostMask(matches[1]);
+              if (parsed[0] == conf['nickname'])
+                channels.remove(matches[3]);
+              continue def;
+            case "JOIN":
+              var parsed = parseHostMask(matches[1]);
+              if (parsed[0] == conf['nickname'])
+                channels.add(matches[3]);
+              continue def;
+            def: default:
               server.sendToClients(msg);
           }
         });
@@ -80,12 +104,15 @@ class Handler {
   }
 
   /**
-   * Method called by [Client] manually
-   * upon authentication
+   * Once closed, destroy this instance.
+   * Overrides [_cleanup] handlers on [_ss]. The override is to ensure the
+   * client doesn't get messaged twice about a disconnection.
    */
-  void sendServerIntro(Client client) {
-    for (String s in intro)
-      client.send(s);
+  void close() {
+    _ss.onError((err) {});
+    _ss.onDone(() {});
+
+    _socket.destroy();
   }
 
   void _cleanup([_]) {
@@ -93,11 +120,15 @@ class Handler {
     server.disconnect();
   }
 
-  static List<String> get_matches(String line) {
+  static List<String> getMatches(String line) {
     var match = new List<String>(5);
     var parsed = REGEX.firstMatch(line);
     for (int i = 0; i <= parsed.groupCount; i++)
       match[i] = parsed.group(i);
     return match;
+  }
+
+  static List<String> parseHostMask(String hostmask) {
+    return hostmask.split(HOSTMASK_REGEX);
   }
 }

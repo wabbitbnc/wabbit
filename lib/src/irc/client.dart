@@ -31,7 +31,7 @@ class Client {
       _ss.onData((List<int> incoming) {
         List<String> data = Bouncer.splitter.convert(Bouncer.decoder.convert(incoming));
         data.forEach((String msg) {
-          List<String> matches = Handler.get_matches(msg);
+          List<String> matches = Handler.getMatches(msg);
           String command = matches[2];
           if (command != "PASS")
             return;
@@ -76,10 +76,8 @@ class Client {
             var client = new VerifiedClient(uid, server, _ss, bouncer, socket);
             auth.authenticated(client);
 
-            if (client.server.connected) {
-              client.server.handler.sendServerIntro(client);
-              client.server.handler.send("MOTD");
-            }
+            if (client.server.connected)
+              client.server.handler.init(client);
             client.handle();
           }
         });
@@ -150,7 +148,7 @@ class VerifiedClient extends Client {
       _ss.onData((List<int> incoming) {
         List<String> data = Bouncer.splitter.convert(Bouncer.decoder.convert(incoming));
         data.forEach((String msg) {
-          List<String> matches = Handler.get_matches(msg);
+          List<String> matches = Handler.getMatches(msg);
           String command = matches[2];
 
           switch (command) {

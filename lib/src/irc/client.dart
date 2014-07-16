@@ -70,7 +70,7 @@ class Client {
 
             time.cancel();
             send("NOTICE * :Successfully logged in");
-
+            
             var client = new VerifiedClient(uid, server, _ss, bouncer, socket);
             auth.authenticated(client);
 
@@ -133,6 +133,13 @@ class VerifiedClient extends Client {
       _ss.onData((List<int> incoming) {
         List<String> data = Bouncer.splitter.convert(Bouncer.decoder.convert(incoming));
         data.forEach((String msg) {
+          Plugins.manager.sendAll({
+            'uid': uid,
+            'sid': server.sid,
+            'message': msg,
+            'side': EventSide.CLIENT
+          }, EventType.MESSAGE);
+          
           List<String> matches = Handler.get_matches(msg);
           String command = matches[2];
 
@@ -158,6 +165,12 @@ class VerifiedClient extends Client {
       printError("Client listener (Authenticated)", err);
       socket.close();
       bouncer.clients[uid].remove(this);
+      
+      Plugins.manager.sendAll({
+        'uid': client.uid,
+        'sid': client.sid
+        'side': EventSide.CLIENT
+      }, EventType.LEAVE);
     });
   }
 

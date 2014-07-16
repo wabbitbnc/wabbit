@@ -3,6 +3,7 @@ build/
 packages/
 bin/packages
 
+cache/
 .project
 .settings/
 run/

@@ -18,7 +18,31 @@ class Bouncer {
   /**
    * The [Config] objects must already be loaded in.
    */
-  Bouncer(this.user_config, this.network_config, this.server_config);
+  Bouncer(this.user_config, this.network_config, this.server_config) {
+    Plugins.manager.listen(EventType.MESSAGE, (String message, Map<String, dynamic> data) {
+      if(data['side'] == EventSide.CLIENT) {
+        for(VerifiedClient client in clients['uid']) {
+          if(client.server.sid == data['sid']) {
+            client.send(data['msg']);
+          }
+        }
+      } else if(data['side'] == EventSide.SERVER) {
+        for(Server server in server['uid']) {
+          if(server.sid == data['sid']) {
+            server.handler.send(data['msg']);
+          }
+        }
+      }
+    });
+    
+    Plugins.manager.listen(EventType.LEAVE, (String message, Map<String, dynamic> data) {
+      if(data['side'] == EventSide.CLIENT) {
+        // todo on latest commit
+      } else if(data['side'] == EventSide.SERVER) {
+        // todo on latest commit
+      }
+    });
+  }
 
   /**
    * Initiates all connections to IRC

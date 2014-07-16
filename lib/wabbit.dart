@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'dart:async';
 import 'dart:io';
 
+import 'package:wabbit/src/plugins/api.dart';
 import 'package:plugins/loader.dart';
 
 part 'src/bouncer.dart';

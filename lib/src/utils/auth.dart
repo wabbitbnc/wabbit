@@ -16,6 +16,12 @@ class Auth {
   }
 
   void authenticated(VerifiedClient client) {
+    Plugins.manager.sendAll({
+      'uid': client.uid,
+      'sid': client.sid,
+      'side': EventSide.CLIENT
+    }, EventType.CONNECT);
+    
     List<VerifiedClient> clients = bouncer.clients[client.uid];
     if (clients == null) {
       clients = <VerifiedClient>[];

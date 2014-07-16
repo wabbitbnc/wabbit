@@ -29,6 +29,12 @@ class Handler {
     var conf = server.bouncer.network_config["${server.uid}"]["${server.sid}"];
     runZoned(() {
       Socket.connect(conf['address'], conf['port']).then((Socket socket) {
+        Plugins.manager.sendAll({
+          'uid': server.uid,
+          'sid': server.sid,
+          'side': EventSide.SERVER
+        }, EventType.CONNECT);
+        
         _socket = socket;
         _socket.transform(Bouncer.decoder).transform(Bouncer.splitter).listen((String msg) {
           if (!_received) {
@@ -37,6 +43,13 @@ class Handler {
             send("USER ${conf['username']} 8 * :${conf['realname']}");
             networkName = conf['name'];
           }
+          
+          Plugins.manager.sendAll({
+            'uid': server.uid,
+            'sid': server.sid,
+            'message': msg,
+            'side': EventSide.SERVER
+          }, EventType.MESSAGE);
 
           var matches = get_matches(msg);
           var command = matches[2];
@@ -53,6 +66,12 @@ class Handler {
               server.sendToClients(msg);
           }
         }).onError((err) {
+          Plugins.manager.sendAll({
+            'uid': server.uid,
+            'sid': server.sid,
+            'side': EventSide.SERVER
+          }, EventType.LEAVE);
+          
           server.messageClients("Disconnected!");
           server.disconnect();
         });

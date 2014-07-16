@@ -3,8 +3,14 @@ import 'dart:io';
 
 void main([List<String> args]) {
   defineTask('build', taskFunction: build);
+  defineTask('analyze', taskFunction: analyze);
 
   startGrinder(args);
+}
+
+void analyze(GrinderContext gc) {
+  runSdkBinary(gc, "dartanalyzer", arguments: ["bin/start.dart"]);
+  runSdkBinary(gc, "dartanalyzer", arguments: ["lib/wabbit.dart"]);
 }
 
 void build(GrinderContext gc) {

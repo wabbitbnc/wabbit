@@ -95,7 +95,7 @@ class Client {
 
   void _sendAvailableNetworks(int uid) {
     send("NOTICE * :Available networks available are:");
-    for (var net in bouncer.network_config[uid.toString()].values) {
+    for (var net in bouncer.config.network_config[uid.toString()].values) {
       send("NOTICE * :${net['name']}");
     }
   }
@@ -183,7 +183,7 @@ class VerifiedClient extends Client {
   }
 
   dynamic getUserConf(String conf) {
-    return bouncer.user_config[uid.toString()][conf];
+    return bouncer.config.user_config[uid.toString()][conf];
   }
 
   @override

@@ -24,7 +24,7 @@ class Handler {
   Handler(this.server);
 
   void init(VerifiedClient client) {
-    var conf = server.bouncer.network_config["${server.uid}"]["${server.sid}"];
+    var conf = server.getConfig();
 
     // Send intro
     for (String s in intro)
@@ -43,11 +43,14 @@ class Handler {
   }
 
   void listen() {
-    var conf = server.bouncer.network_config["${server.uid}"]["${server.sid}"];
+    var conf = server.getConfig();
     runZoned(() {
       Socket.connect(conf['address'], conf['port']).then((Socket socket) {
         _socket = socket;
-        _ss = _socket.transform(Bouncer.decoder).transform(Bouncer.splitter).listen((String msg) {
+
+        var dec = Bouncer.decoder;
+        var spl = Bouncer.splitter;
+        _ss = _socket.transform(dec).transform(spl).listen((String msg) {
           if (!_received) {
             _received = true;
             send("NICK ${conf['nickname']}");

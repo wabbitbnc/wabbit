@@ -66,4 +66,8 @@ class Server {
     var clients = bouncer.clients[uid];
     return clients != null ? clients : [];
   }
+
+  Map<dynamic, dynamic> getConfig() {
+    return bouncer.config.network_config["$uid"]["$sid"];
+  }
 }

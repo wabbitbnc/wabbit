@@ -12,7 +12,7 @@ class Client {
    */
   bool get authenticated => this is VerifiedClient;
 
-  Timer time;
+  Timer _time;
 
   Client(this.bouncer, this.socket);
 
@@ -26,10 +26,12 @@ class Client {
   void handle() {
     runZoned(() {
       _ss = socket.listen(null);
+      _initCleanup();
+
       _ss.onData((List<int> incoming) {
         List<String> data = Bouncer.splitter.convert(Bouncer.decoder.convert(incoming));
         data.forEach((String msg) {
-          List<String> matches = Handler.get_matches(msg);
+          List<String> matches = Handler.getMatches(msg);
           String command = matches[2];
           if (command != "PASS")
             return;
@@ -68,43 +70,66 @@ class Client {
               return;
             }
 
-            time.cancel();
+            _time.cancel();
             send("NOTICE * :Successfully logged in");
-            
+
             var client = new VerifiedClient(uid, server, _ss, bouncer, socket);
             auth.authenticated(client);
 
-            client.server.handler.sendServerIntro(client);
-            client.server.handler.send("MOTD");
+            if (client.server.connected)
+              client.server.handler.init(client);
             client.handle();
+
+            Plugins.manager.sendAll({
+              'type': EventType.CONNECT,
+              'uid': client.uid,
+              'sid': client.server.sid,
+              'side': EventSide.CLIENT
+            });
           }
         });
       });
     }, onError: (err, stacktrace) {
       printError("Client listener (Unauthenticated)", "$err $stacktrace");
-      socket.close();
+      _cleanup();
     });
 
-    time = new Timer(new Duration(seconds: 15), () {
-      socket.close();
-      time = null;
+    _time = new Timer(new Duration(seconds: 15), () {
+      socket.destroy();
+      _time = null;
     });
+  }
+
+  void disconnect() {
+    _cleanup();
   }
 
   void _sendAvailableNetworks(int uid) {
     send("NOTICE * :Available networks available are:");
-    for (var net in bouncer.network_config[uid.toString()].values) {
+    for (var net in bouncer.config.network_config[uid.toString()].values) {
       send("NOTICE * :${net['name']}");
     }
+  }
+
+  void _initCleanup() {
+    _ss.onError((err) {
+      _cleanup();
+    });
+
+    _ss.onDone(() {
+      _cleanup();
+    });
+  }
+
+  void _cleanup() {
+    print("Cleaning up disconnected client...");
+    _ss.cancel();
+    socket.destroy();
   }
 }
 
 class VerifiedClient extends Client {
 
-  /**
-   * The user ID
-   * -1 means unauthenticated
-   */
   final int uid;
 
   final Server server;
@@ -130,22 +155,26 @@ class VerifiedClient extends Client {
   @override
   void handle() {
     runZoned(() {
+      _initCleanup();
       _ss.onData((List<int> incoming) {
         List<String> data = Bouncer.splitter.convert(Bouncer.decoder.convert(incoming));
         data.forEach((String msg) {
           Plugins.manager.sendAll({
+            'type': EventType.MESSAGE,
             'uid': uid,
             'sid': server.sid,
-            'message': msg,
+            'msg': msg,
             'side': EventSide.CLIENT
-          }, EventType.MESSAGE);
-          
-          List<String> matches = Handler.get_matches(msg);
+          });
+          List<String> matches = Handler.getMatches(msg);
           String command = matches[2];
 
           switch (command) {
             case "USER":
             case "NICK":
+              break;
+            case "QUIT":
+              _cleanup();
               break;
             case "PRIVMSG":
               if (matches[3] != _hub.nickname)
@@ -162,19 +191,30 @@ class VerifiedClient extends Client {
         });
      });
     }, onError: (err) {
-      printError("Client listener (Authenticated)", err);
-      socket.close();
-      bouncer.clients[uid].remove(this);
-      
-      Plugins.manager.sendAll({
-        'uid': client.uid,
-        'sid': client.sid
-        'side': EventSide.CLIENT
-      }, EventType.LEAVE);
+      printError("Client listener (Authenticated)", err,
+                [
+                  "Server ID: ${server.sid}",
+                  "Client ID: ${uid}"
+                ]);
+      _cleanup();
     });
   }
 
   dynamic getUserConf(String conf) {
-    return bouncer.user_config[uid.toString()][conf];
+    return bouncer.config.user_config[uid.toString()][conf];
+  }
+
+  @override
+  void _cleanup() {
+    super._cleanup();
+    Plugins.manager.sendAll({
+      'type': EventType.LEAVE,
+      'uid': uid,
+      'sid': server.sid,
+      'side': EventSide.CLIENT
+    });
+
+    server.getClients().remove(this);
+    print("Remaining clients connected: ${server.getClients().length}");
   }
 }

@@ -2,6 +2,7 @@
 library wabbit;
 
 import 'dart:convert';
+import 'dart:collection';
 import 'dart:async';
 import 'dart:io';
 

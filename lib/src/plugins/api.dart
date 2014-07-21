@@ -1,9 +1,9 @@
 library wabbit.plugins;
 
 class EventType {
-  static const int MESSAGE = 2;
-  static const int CONENECT = 3;
-  static const int LEAVE = 4;
+  static const int MESSAGE = 0;
+  static const int CONNECT = 1;
+  static const int LEAVE = 2;
 }
 
 class EventSide {

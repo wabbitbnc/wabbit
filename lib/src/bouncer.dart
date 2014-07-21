@@ -5,9 +5,7 @@ class Bouncer {
   static final Utf8Decoder decoder = new Utf8Decoder(allowMalformed: true);
   static final LineSplitter splitter = new LineSplitter();
 
-  final Config user_config;
-  final Config network_config;
-  final Config server_config;
+  final ConfigBundle config;
 
   final Map<int, List<Server>> servers = new Map<int, List<Server>>();
   final Map<int, List<VerifiedClient>> clients = new Map<int, List<VerifiedClient>>();
@@ -16,30 +14,38 @@ class Bouncer {
   var port;
 
   /**
-   * The [Config] objects must already be loaded in.
+   * The [Config] must already be loaded.
    */
-  Bouncer(this.user_config, this.network_config, this.server_config) {
-    Plugins.manager.listen(EventType.MESSAGE, (String message, Map<String, dynamic> data) {
+  Bouncer(this.config) {
+    Plugins.manager.eventType(EventType.MESSAGE).listen((Map<String, dynamic> data) {
       if(data['side'] == EventSide.CLIENT) {
-        for(VerifiedClient client in clients['uid']) {
+        for(VerifiedClient client in clients[data['uid']]) {
           if(client.server.sid == data['sid']) {
             client.send(data['msg']);
           }
         }
       } else if(data['side'] == EventSide.SERVER) {
-        for(Server server in server['uid']) {
+        for(Server server in servers[data['uid']]) {
           if(server.sid == data['sid']) {
             server.handler.send(data['msg']);
           }
         }
       }
     });
-    
-    Plugins.manager.listen(EventType.LEAVE, (String message, Map<String, dynamic> data) {
+
+    Plugins.manager.eventType(EventType.LEAVE).listen((Map<String, dynamic> data) {
       if(data['side'] == EventSide.CLIENT) {
-        // todo on latest commit
+        for(VerifiedClient client in clients[data['uid']]) {
+          if(client.server.sid == data['sid']) {
+            client.disconnect();
+          }
+        }
       } else if(data['side'] == EventSide.SERVER) {
-        // todo on latest commit
+        for(Server server in servers[data['uid']]) {
+          if(server.sid == data['sid']) {
+            server.disconnect();
+          }
+        }
       }
     });
   }
@@ -48,9 +54,9 @@ class Bouncer {
    * Initiates all connections to IRC
    */
   void connect() {
-    network_config.config.forEach((uid, config) {
-      var id = int.parse(uid);
+    config.network_config.config.forEach((uid, config) {
       runZoned(() {
+        var id = int.parse(uid);
         config.forEach((sid, conf) {
           List<Server> serve = servers[id];
           if (serve == null) {
@@ -71,25 +77,27 @@ class Bouncer {
    * Starts accepting clients
    */
   void start() {
-    var addr = server_config['bind_address'];
-    var port = server_config['port'];
-    addr = addr == "any" ? InternetAddress.ANY_IP_V4 : addr;
-    ServerSocket.bind(addr, port).then((ServerSocket socket) {
-      print("Listening to ${server_config['bind_address']} on port $port");
-      this.address = socket.address.host;
-      this.port = port;
-      socket.handleError((err) {
-        printError("ServerSocket binding", err);
-      }).listen((Socket sock) {
-        // Client will be added to the clients list when authenticated
-        Client c = new Client(this, sock);
-        c.send("NOTICE * :Authentication required (/PASS <user>/<network>:<pass>)");
-        c.handle();
-      }).onError((err) {
-        printError("client->server connection", err);
+    var addr = config.server_config['bind_address'];
+    var port = config.server_config['port'];
+    var resolvedAddr = addr == "any" ? InternetAddress.ANY_IP_V4 : addr;
+    runZoned(() {
+      ServerSocket.bind(resolvedAddr, port).then((ServerSocket socket) {
+        print("Listening to $addr on port $port");
+        this.address = socket.address.host;
+        this.port = port;
+        socket.handleError((err) {
+          printError("ServerSocket binding", err);
+        }).listen((Socket sock) {
+          // Client will be added to the clients list when authenticated
+          new Client(this, sock)
+            ..send("NOTICE * :Authentication required (/PASS <user>/<network>:<pass>)")
+            ..handle();
+        }).onError((err) {
+          printError("client->server connection", err);
+        });
       });
+    }, onError: (err) {
+      printError("ServerSocket listener", err);
     });
   }
-
-
 }

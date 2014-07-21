@@ -24,28 +24,28 @@ main(List<String> args) {
   var server_config = new Config("server.json");
   var plugins_config = new Config("plugins.json");
 
-  var gen = new ConfigGenerator(user_config, network_config,
+  var bundle = new ConfigBundle(user_config, network_config,
                                 server_config, plugins_config);
-  if (gen.needsGeneration) {
-    gen.configure();
-    gen.save();
-  } else {
-    user_config.load();
-    network_config.load();
-    server_config.load();
-    plugins_config.load();
+  {
+    var gen = new ConfigGenerator(bundle);
+    if (gen.needsGeneration) {
+      gen.configure();
+      bundle.save();
+    } else {
+      bundle.load();
+    }
   }
 
-  var loader = new Plugins(plugins_config);
+  var loader = new Plugins(bundle.plugins_config);
   loader.load().then((List<List<Plugin>> _pl) {
     {
       List<Plugin> plugins = new List();
       plugins.addAll(_pl[0]);
       plugins.addAll(_pl[1]);
-      print("Registered plugins: ${plugins}");
-      Plugins.manager.plugins = plugins;
+      print("Registered plugins: ${plugins.join(", ")}");
+      Plugins.manager.init(plugins);
     }
-    Bouncer server = new Bouncer(user_config, network_config, server_config);
+    Bouncer server = new Bouncer(bundle);
     server.connect();
     server.start();
   });

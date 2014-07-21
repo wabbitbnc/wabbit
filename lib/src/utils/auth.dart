@@ -7,8 +7,8 @@ class Auth {
   Auth(this.bouncer);
 
   int getId(String user, String pass) {
-    for (var i in bouncer.user_config.config.keys) {
-      var conf = bouncer.user_config.config[i];
+  for (var i in bouncer.config.user_config.config.keys) {
+      var conf = bouncer.config.user_config.config[i];
       if ((conf['username'] == user) && (conf['password'] == pass))
         return int.parse(i);
     }
@@ -16,12 +16,6 @@ class Auth {
   }
 
   void authenticated(VerifiedClient client) {
-    Plugins.manager.sendAll({
-      'uid': client.uid,
-      'sid': client.sid,
-      'side': EventSide.CLIENT
-    }, EventType.CONNECT);
-    
     List<VerifiedClient> clients = bouncer.clients[client.uid];
     if (clients == null) {
       clients = <VerifiedClient>[];
@@ -31,9 +25,9 @@ class Auth {
   }
 
   Server getNetwork(int uid, String name) {
-    var map = bouncer.network_config[uid.toString()];
+    var map = bouncer.config.network_config[uid.toString()];
     for (var ssid in map.keys) {
-      var conf = bouncer.network_config[uid.toString()][ssid];
+      var conf = bouncer.config.network_config[uid.toString()][ssid];
       if (conf['name'] == name) {
         var sid = int.parse(ssid);
         for (var server in bouncer.servers[uid]) {

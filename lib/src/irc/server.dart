@@ -52,7 +52,7 @@ class Server {
     return true;
   }
 
-  void messageClients(String msg) {
+  void notifyClients(String msg) {
     for (var c in getClients())
       c.notify(msg);
   }
@@ -65,5 +65,9 @@ class Server {
   List<VerifiedClient> getClients() {
     var clients = bouncer.clients[uid];
     return clients != null ? clients : [];
+  }
+
+  Map<dynamic, dynamic> getConfig() {
+    return bouncer.config.network_config["$uid"]["$sid"];
   }
 }

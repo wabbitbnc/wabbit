@@ -4,6 +4,7 @@ packages/
 bin/packages
 
 cache/
+.buildlog
 .project
 .settings/
 run/
@@ -21,3 +22,5 @@ run/
 
 # Include when developing application packages.
 pubspec.lock
+
+config/

@@ -1,8 +1,8 @@
 part of wabbit;
 
 class WabbitPluginManager extends PluginManager {
+
   final Config conf;
-  List<Plugin> plugins;
   Map<int, StreamController> type_listeners;
 
   WabbitPluginManager(this.conf) : super() {
@@ -16,7 +16,6 @@ class WabbitPluginManager extends PluginManager {
   }
 
   void init(List<Plugin> plugins) {
-    this.plugins = plugins;
     this.listenAll((String plugin, data) {
       List<String> plugin_names = conf['user'][data['uid'].toString()];
       if(!type_listeners.containsKey(data['type']) || !plugin_names.contains(plugin))
@@ -27,15 +26,16 @@ class WabbitPluginManager extends PluginManager {
   }
 
   @override
-  void sendAll(Map<String, dynamic> data, [int type = PluginManager.NORMAL]) {
-    for(Plugin plugin in plugins) {
+  void sendAll(Map<String, dynamic> data, [int type = SendType.NORMAL]) {
+    for (String p in plugins) {
+      Plugin plug = plugin(p);
       List<String> plugin_names = conf['user'][data['uid'].toString()];
-      if(plugin_names.contains(plugin.name)) {
-        this.send(plugin.name, data, type);
+      if(plugin_names.contains(plug.name)) {
+        this.send(plug.name, data, type);
       }
     }
   }
-  
+
 }
 
 class Plugins {

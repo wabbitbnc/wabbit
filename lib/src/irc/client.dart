@@ -45,7 +45,7 @@ class Client {
 
           var auth = new Auth(bouncer);
           index = info.indexOf("/");
-          var uid;
+          int uid;
           {
             if (index != -1)
               uid = auth.getId(info.substring(0, index), pass);
@@ -95,8 +95,8 @@ class Client {
     });
 
     _time = new Timer(new Duration(seconds: 15), () {
-      socket.destroy();
       _time = null;
+      _cleanup();
     });
   }
 
@@ -123,8 +123,9 @@ class Client {
 
   void _cleanup() {
     print("Cleaning up disconnected client...");
-    _ss.cancel();
+    if (_ss != null) _ss.cancel();
     socket.destroy();
+    _ss = null;
   }
 }
 

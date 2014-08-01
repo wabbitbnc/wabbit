@@ -168,7 +168,7 @@ class VerifiedClient extends Client {
             'side': EventSide.CLIENT
           });
           List<String> matches = Handler.getMatches(msg);
-          String command = matches[2];
+          String command = matches[2].toUpperCase();
 
           switch (command) {
             case "USER":

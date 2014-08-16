@@ -12,7 +12,7 @@ class Hub {
   Hub(this.client);
 
   void message(String msg) {
-    client.send(":${prefix}${_nick}!bnc@dartboard PRIVMSG ${client.getUserConf('nickname')} :$msg");
+    client.send(":${prefix}${_nick}!bnc@wabbit.bnc PRIVMSG ${client.getUserConf('nickname')} :$msg");
   }
 
   void handleCommand(String command, List<String> args) {

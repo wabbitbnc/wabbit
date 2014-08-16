@@ -84,7 +84,7 @@ class Handler {
             case "002":
             case "005":
               intro.add(msg);
-              break;
+              continue def;
             case "KICK":
               var parsed = matches[3].split(" ");
               if (parsed[1] == conf['nickname'])
